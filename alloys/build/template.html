@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alloy Optics | Math Widgets</title>
+<style>
+/* VOICE work: a lookdev reference tool, matching the math-widgets collection
+   IDEA a polished ball bearing under one softbox, with its measured constants printed beside it
+   PICTURE a large physically rendered sphere of the chosen metal, coloured by full-spectrum Fresnel at every angle
+   COLOUR repo palette: night #111522, cards #1b2334, edges #35415a, ink #eef3ff, accent #9bc4ff, gold #e7a34a for warnings
+   TYPE system-ui throughout, as in the other widgets
+   LAYOUT laptop: sphere left, values right, sections as cards below; phone: title, sphere, picker, values */
+:root{color-scheme:dark;--bg:#111522;--ink:#eef3ff;--mute:#b7c3d8;--line:#35415a;--panel:#1b2334;--blue:#9bc4ff;--red:#e7a34a;--teal:#35b8a6}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,'Segoe UI',sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-weight:650;line-height:1.1;letter-spacing:-.02em;margin:0 0 .4em;text-wrap:balance}
+h1{font-size:clamp(32px,5vw,48px)}h2{font-size:clamp(24px,3vw,32px)}h3{font-size:19px}
+p{margin:.3em 0 .8em;max-width:68ch}
+.band{padding:clamp(28px,4vw,56px) max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+.alt{background:transparent}
+.alt>.wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,32px)}
+.alt{padding-block:clamp(12px,2vw,24px)}
+.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(20px,3vw,44px);align-items:start}
+.lede{color:var(--mute);margin-top:0}
+.ballbox{position:relative;aspect-ratio:1/1;max-width:520px;width:100%}
+.ballbox canvas{position:absolute;inset:0;width:100%;height:100%}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 0}
+.chip{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mute)}
+.chip i{width:34px;height:34px;border-radius:6px;border:1px solid var(--line);display:block}
+label{font-size:14px;font-weight:500;display:block;margin-bottom:4px}
+select,input[type=number]{font:16px system-ui,sans-serif;color:var(--ink);background:var(--panel);border:1px solid color-mix(in srgb,var(--ink) 30%,transparent);border-radius:8px;padding:10px 12px;min-height:44px;width:100%}
+input[type=number]{width:6.5em}
+select:focus,input:focus,button:focus{outline:3px solid color-mix(in srgb,var(--blue) 50%,transparent);outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--teal);min-height:44px}
+button{font:500 14px system-ui,sans-serif;color:var(--blue);background:transparent;border:1px solid color-mix(in srgb,var(--blue) 45%,transparent);border-radius:8px;padding:6px 10px;min-height:36px;cursor:pointer}
+button:hover{background:color-mix(in srgb,var(--blue) 10%,transparent)}
+.note{font-size:14px;color:var(--mute)}
+.warn{color:var(--red)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;font-size:14px;color:var(--mute)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+.math{border-left:3px solid var(--blue);background:var(--panel);padding:10px 14px;margin:10px 0 0;font-size:14.5px}
+.alt .math{background:var(--bg)}
+.back{font-size:14px;color:var(--blue);text-decoration:none}.back:hover{text-decoration:underline}
+a{color:var(--blue)}
+.math code,code{font:14px ui-monospace,Menlo,monospace;overflow-wrap:anywhere}
+.math b{font-weight:600}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(20px,3vw,40px)}
+.fig{position:relative;min-height:300px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+svg text{font:13px system-ui,sans-serif;fill:var(--mute);paint-order:stroke;stroke:var(--bg);stroke-width:4px}
+.alt svg text{stroke:var(--panel)}
+.methods{display:grid;gap:8px}
+.mrow{display:grid;grid-template-columns:64px minmax(0,1fr) 4.5em;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.mrow canvas{width:64px;height:64px}
+.bar{height:8px;border-radius:4px;background:var(--line);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--blue)}
+.de{font:600 18px system-ui,sans-serif;text-align:right;font-variant-numeric:tabular-nums}
+.comp{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 12px}
+.comp div{display:flex;align-items:center;gap:8px}
+.gen{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:24px;align-items:start}
+.gen .ballbox{max-width:220px}
+.out{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center;font-size:15px}
+.out span.v{font-variant-numeric:tabular-nums;white-space:nowrap}
+dl{display:grid;grid-template-columns:minmax(0,11em) minmax(0,1fr);gap:8px 20px;margin:0}
+dt{font-weight:600}dd{margin:0;color:var(--ink)}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+nav.scroll{display:flex;gap:18px;font-size:14px;margin-top:14px;white-space:nowrap}
+nav a{color:var(--blue);text-decoration:none}nav a:hover{text-decoration:underline}
+@media(max-width:860px){.top,.grid2{grid-template-columns:minmax(0,1fr)}.ballbox{margin:0 auto}}
+@media(max-width:600px){table{font-size:13px}th,td{padding:6px 4px}.gen{grid-template-columns:minmax(0,1fr)}.gen .ballbox{margin:0 auto}dl{grid-template-columns:minmax(0,1fr)}dd{margin-bottom:8px}}
+@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+</style></head><body>
+
+<section class="band"><div class="wrap">
+<a class="back" href="../">← Math Widgets</a>
+<h1 style="margin-top:10px">Alloy optics bench</h1>
+<p class="lede">Measured metals and alloys, rendered from their real light-reflection data, with every value a shader needs. Numbers are worked out live in this page from published measurements.</p>
+<nav class="scroll"><a href="#values">Values</a><a href="#curves">Curves</a><a href="#mix">Alloy mixing test</a><a href="#edge">Edge tint generator</a><a href="#words">Plain-English glossary</a><a href="#data">Data sources</a></nav>
+</div></section>
+
+<section class="band" id="values" style="padding-top:0"><div class="wrap top">
+<div>
+<div class="ballbox"><canvas id="ball"></canvas></div>
+<div class="chips"><div class="chip"><i id="swF"></i>Facing colour</div><div class="chip"><i id="swE"></i>Edge colour (80°)</div></div>
+<p class="note">The ball is a perfect mirror under one softbox and a grey studio. Its colour at each point comes from the measured data at that viewing angle.</p>
+</div>
+<div>
+<label for="pick">Metal or alloy</label>
+<select id="pick"></select>
+<p class="note" id="src"></p>
+<div class="scroll"><table id="vals"></table></div>
+<div class="math"><b>How to use these.</b> In a reflectivity + edge-tint node, type in <b>Reflectivity</b> and <b>Edge tint</b> (ACEScg) and you're done. A node that takes n and k wants the fitted n,k row: those reproduce the full-spectrum colour at every angle. The measured n,k row is the raw data at three single wavelengths and renders copper and brass noticeably too red.</div>
+</div>
+</div></section>
+
+<section class="band alt" id="curves"><div class="wrap">
+<h2>How the colour changes with angle and wavelength</h2>
+<div class="grid2">
+<div>
+<h3>Reflection vs. viewing angle</h3>
+<p>Looking straight at a metal (0°) shows its own colour. Tilt it towards edge-on (90°) and every metal goes white. Edge tint controls how it gets there.</p>
+<div class="chips" style="margin:0 0 6px"><span class="chip"><i style="width:18px;height:4px;border:0;background:#d6293e"></i>Red</span><span class="chip"><i style="width:18px;height:4px;border:0;background:#2a9a48"></i>Green</span><span class="chip"><i style="width:18px;height:4px;border:0;background:#2f6fd6"></i>Blue</span></div><div class="fig" id="figA"><svg id="svgA"></svg></div>
+<div class="math">Per angle θ: Fresnel reflectance of the complex index N = n + ik, averaged over both polarisations, computed for each wavelength, then turned into ACEScg red, green and blue.</div>
+</div>
+<div>
+<h3>Reflection vs. wavelength (straight on)</h3>
+<p>How much of each colour of light bounces back when you look straight at it. Flat means grey (steel); a curve rising towards red means warm (copper, gold).</p>
+<div class="fig" id="figB"><svg id="svgB"></svg></div>
+<div class="math"><code>F0(λ) = ((n−1)² + k²) / ((n+1)² + k²)</code> at every wavelength λ from 380 to 780 nm.</div>
+</div>
+</div>
+</div></section>
+
+<section class="band alt" id="mix"><div class="wrap">
+<h2>Can you build an alloy from its ingredients?</h2>
+<p>Pick a real alloy with measured data. Each row fakes it from the pure metals a different way, and scores how different the fake would look next to the real thing. Under 2 is a near-perfect match; over 5 you'd see it side by side; over 10 it's a different colour. Change the percentages to test other recipes.</p>
+<div class="grid2">
+<div>
+<label for="mixPick">Real alloy to test against</label>
+<select id="mixPick"></select>
+<div class="comp" id="comp"></div>
+<div class="methods" id="methods"></div>
+</div>
+<div>
+<h3>What each method does</h3>
+<dl>
+<dt>Main metal only</dt><dd>Ignore the minor ingredients and use the biggest one.</dd>
+<dt>Average n and k</dt><dd>Blend the n and k numbers by percentage. What most alloy guides do.</dd>
+<dt>Average permittivity</dt><dd>Blend a related quantity (ε, how the metal's electrons respond to light) instead of n and k.</dd>
+<dt>Grain mixture</dt><dd>Treat the alloy as tiny grains of each metal packed together (the Bruggeman model).</dd>
+<dt>Average reflectivity</dt><dd>Blend the final colours directly.</dd>
+</dl>
+<div class="math"><b>Under the hood.</b> Average n,k: <code>N = Σ fᵢ Nᵢ</code>. Permittivity: <code>ε = Σ fᵢ Nᵢ²</code>, <code>N = √ε</code>. Bruggeman: solve <code>Σ fᵢ (εᵢ − ε)/(εᵢ + 2ε) = 0</code>. Reflectivity: <code>F0 = Σ fᵢ F0ᵢ</code>. Score: CIEDE2000 colour difference between the faked and measured straight-on colour under daylight.</div>
+<p class="note" style="margin-top:12px">Why brass fails every method: alloying changes how copper's electrons absorb light, so brass ends up yellower than both copper and zinc. No blend of two ingredients can land outside them.</p>
+</div>
+</div>
+</div></section>
+
+<section class="band alt" id="edge"><div class="wrap">
+<h2>Edge tint generator</h2>
+<p>For a shader where artists paint reflectivity: the edge tint is worked out from their value with one fixed number per channel, <b>t</b>, the share of the gap to white the edge closes. Pick which metal t comes from, then drag the reflectivity.</p>
+<div class="gen">
+<div class="ballbox"><canvas id="ball2"></canvas></div>
+<div>
+<label for="tPick">Take t from</label>
+<select id="tPick"></select>
+<div id="rCtl" style="margin-top:12px"></div>
+<div class="out" id="genOut" style="margin-top:12px"></div>
+<div class="math"><b>The node graph.</b> <code>edge = r × (1 − t) + t</code>, which is the same as <code>mix(r, 1, t)</code>. Then reflectivity r and edge go into the reflectivity + edge-tint node, which rebuilds n and k (Gulbrandsen 2014): <code>n_min = (1−r)/(1+r)</code>, <code>n_max = (1+√r)/(1−√r)</code>, <code>n = g·n_min + (1−g)·n_max</code>, <code>k = √((r(n+1)² − (n−1)²)/(1−r))</code>.</div>
+</div>
+</div>
+</div></section>
+
+<section class="band alt" id="words"><div class="wrap">
+<h2>Plain-English glossary</h2>
+<dl>
+<dt>Reflectivity, F0</dt><dd>How much light a surface bounces back when you look at it straight on, per colour. 1 is a perfect mirror. Steel is about 0.6, silver about 0.97.</dd>
+<dt>Fresnel effect</dt><dd>Surfaces reflect more as you look at them closer to edge-on. Metals already reflect a lot, so the change is subtle, but they all go white at the very edge.</dd>
+<dt>n and k</dt><dd>The two numbers physicists use to describe how a material bends and absorbs light. n is the bending, k the absorbing. Metals have big k. Each changes with the colour of light, which is what gives metals their colour.</dd>
+<dt>Edge tint, g</dt><dd>An artist-friendly stand-in for n. Together with reflectivity it fully defines n and k. It mostly shapes the colour near grazing angles.</dd>
+<dt>t</dt><dd>How far the edge tint sits between reflectivity and white. 0 means the same as reflectivity, 1 means pure white. Iron is about 0.1, silver about 1.</dd>
+<dt>Wavelength, nm</dt><dd>The colour of a single ray of light, in nanometres. Violet is about 400, green 530, red 650. Our eyes see roughly 380 to 780.</dd>
+<dt>Spectrum</dt><dd>A value for every wavelength. Real reflection is a spectrum; a renderer squashes it into three numbers (red, green, blue).</dd>
+<dt>D65</dt><dd>The standard recipe for average daylight that colour scientists use. All colours here assume the metal is lit by it.</dd>
+<dt>CIE 1931 observer</dt><dd>A standard table of how sensitive an average human eye is to each wavelength. It turns a spectrum into a colour the way a person would see it.</dd>
+<dt>XYZ</dt><dd>The raw colour response of that standard eye. Every RGB space is defined from it.</dd>
+<dt>ACEScg</dt><dd>The wide-gamut RGB working space most film pipelines render in. Values here include the white-point adjustment from daylight to ACES white (Bradford), so a perfect white is (1, 1, 1).</dd>
+<dt>Linear sRGB</dt><dd>The standard screen colour space, before the gamma curve. Used here only to show colours on screen.</dd>
+<dt>ΔE, CIEDE2000</dt><dd>A score for how different two colours look to a person. About 1 is barely visible, 2–3 a close match, 5 clearly different, 10+ a different colour.</dd>
+<dt>F82 tint</dt><dd>Another edge-colour control used by OpenPBR and Adobe's model, based on reflection at 82°. Included for those shaders.</dd>
+</dl>
+</div></section>
+
+<section class="band alt" id="data"><div class="wrap">
+<h2>Data sources and caveats</h2>
+<p>All n,k data comes from the <a href="https://refractiveindex.info/">refractiveindex.info</a> database (<a href="https://www.nature.com/articles/s41597-023-02898-2">Polyanskiy 2024</a>). Each metal's source is shown under the picker.</p>
+<ul>
+<li><b>Thin films read darker.</b> Johnson & Christy data is from thin evaporated films. Chromium film is about 15% darker than polished chrome. Where a Rakić version exists, prefer it.</li>
+<li><b>Zinc from Querry is excluded.</b> It gives n ≈ 13 in the visible, which is physically implausible. Werner's zinc is used instead.</li>
+<li><b>Werner datasets are partly computed</b> (density functional theory), not purely measured.</li>
+<li><b>Mixing compositions are typical, not exact</b>: stainless austenitic as Fe72 Cr18 Ni10, ferritic as Fe83 Cr17, permalloy as Ni80 Fe20. Edit them in the test.</li>
+<li><b>Surface finish usually matters more than any of this.</b> Roughness, polish and grime easily outweigh a ΔE of 3.</li>
+</ul>
+<p class="note">Colour maths: CIE 1931 2° observer and D65 at 5 nm steps, XYZ → ACEScg via Bradford adaptation, CIEDE2000 per Sharma et al. 2005. Fitted n,k: reflectivity from the full-spectrum ACEScg colour at 0°, edge tint fitted per channel to the full-spectrum colour at every angle (Gulbrandsen 2014 remap).</p>
+</div></section>
+
+<div class="toast" id="toast">Copied</div>
+
+<script>
+{
+const D=/*DATA*/null;
+const NW=D.wl.length, WL=D.wl, S=D.d65, XB=D.xbar, YB=D.ybar, ZB=D.zbar;
+const KN=1/S.reduce((a,s,i)=>a+s*YB[i],0);
+const byId=Object.fromEntries(D.metals.map(m=>[m.id,m]));
+const $=id=>document.getElementById(id);
+/* complex numbers */
+const cx=(re,im=0)=>({re,im});
+const cadd=(a,b)=>cx(a.re+b.re,a.im+b.im), csub=(a,b)=>cx(a.re-b.re,a.im-b.im);
+const cmul=(a,b)=>cx(a.re*b.re-a.im*b.im,a.re*b.im+a.im*b.re);
+const cdiv=(a,b)=>{const d=b.re*b.re+b.im*b.im;return cx((a.re*b.re+a.im*b.im)/d,(a.im*b.re-a.re*b.im)/d)};
+const csqrt=a=>{const m=Math.hypot(a.re,a.im);let re=Math.sqrt((m+a.re)/2),im=Math.sqrt(Math.max(m-a.re,0)/2);if(a.im<0)im=-im;return cx(re,im)};
+const cabs2=a=>a.re*a.re+a.im*a.im;
+function fres(N,th){const c=Math.cos(th),s2=Math.sin(th)**2,N2=cmul(N,N),t=csqrt(csub(N2,cx(s2))),C=cx(c),N2c=cmul(N2,C);
+ return 0.5*(cabs2(cdiv(csub(C,t),cadd(C,t)))+cabs2(cdiv(csub(N2c,t),cadd(N2c,t))))}
+const f0=(n,k)=>((n-1)**2+k*k)/((n+1)**2+k*k);
+/* colour */
+function xyz(R){let X=0,Y=0,Z=0;for(let i=0;i<NW;i++){const w=S[i]*R[i];X+=w*XB[i];Y+=w*YB[i];Z+=w*ZB[i]}return[X*KN,Y*KN,Z*KN]}
+const mv=(M,v)=>M.map(r=>r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+const toAces=X=>mv(D.M_acescg,X), toSrgb=X=>mv(D.M_srgb,X);
+function lab(X){const W=D.whiteXYZ,f=t=>t>216/24389?Math.cbrt(t):(24389/27*t+16)/116;const fx=f(X[0]/W[0]),fy=f(X[1]/W[1]),fz=f(X[2]/W[2]);return[116*fy-16,500*(fx-fy),200*(fy-fz)]}
+function de2000(a,b){const[L1,a1,b1]=a,[L2,a2,b2]=b,rad=Math.PI/180;
+ const C1=Math.hypot(a1,b1),C2=Math.hypot(a2,b2),Cb=(C1+C2)/2,G=0.5*(1-Math.sqrt(Cb**7/(Cb**7+25**7)));
+ const a1p=a1*(1+G),a2p=a2*(1+G),C1p=Math.hypot(a1p,b1),C2p=Math.hypot(a2p,b2);
+ const h=(x,y)=>{if(x===0&&y===0)return 0;let v=Math.atan2(y,x)/rad;return v<0?v+360:v};
+ const h1=h(a1p,b1),h2=h(a2p,b2),dL=L2-L1,dC=C2p-C1p;let dh=0;
+ if(C1p*C2p!==0){dh=h2-h1;if(dh>180)dh-=360;else if(dh<-180)dh+=360}
+ const dH=2*Math.sqrt(C1p*C2p)*Math.sin(dh/2*rad),Lb=(L1+L2)/2,Cbp=(C1p+C2p)/2;
+ let hb=h1+h2;if(C1p*C2p!==0){if(Math.abs(h1-h2)>180)hb=(h1+h2<360)?(h1+h2+360)/2:(h1+h2-360)/2;else hb=(h1+h2)/2}
+ const T=1-0.17*Math.cos((hb-30)*rad)+0.24*Math.cos(2*hb*rad)+0.32*Math.cos((3*hb+6)*rad)-0.2*Math.cos((4*hb-63)*rad);
+ const dTh=30*Math.exp(-(((hb-275)/25)**2)),RC=2*Math.sqrt(Cbp**7/(Cbp**7+25**7));
+ const SL=1+0.015*(Lb-50)**2/Math.sqrt(20+(Lb-50)**2),SC=1+0.045*Cbp,SH=1+0.015*Cbp*T,RT=-Math.sin(2*dTh*rad)*RC;
+ return Math.sqrt((dL/SL)**2+(dC/SC)**2+(dH/SH)**2+RT*(dC/SC)*(dH/SH))}
+/* metal helpers */
+const Nof=m=>m.n.map((n,i)=>cx(n,m.k[i]));
+const F0spec=N=>N.map(z=>f0(z.re,z.im));
+const ANG=Array.from({length:91},(_,i)=>i*Math.PI/180);
+function angleCurves(N){return ANG.map(th=>{const X=xyz(N.map(z=>fres(z,th)));return{ac:toAces(X),sr:toSrgb(X)}})}
+function interp(arr,nm){const p=(nm-380)/5,i=Math.floor(p),f=p-i;return arr[i]*(1-f)+arr[Math.min(i+1,NW-1)]*f}
+function gulbG(n,r){const s=Math.sqrt(r),mn=(1-r)/(1+r),mx=(1+s)/(1-s);return(n-mx)/(mn-mx)}
+function gulbInv(r,g){r=Math.min(r,0.9999);const s=Math.sqrt(r),n=g*(1-r)/(1+r)+(1-g)*(1+s)/(1-s);return{n,k:Math.sqrt(Math.max((r*(n+1)**2-(n-1)**2)/(1-r),0))}}
+const FIT_ANG=Array.from({length:45},(_,i)=>i*2*Math.PI/180);
+function fitG(r,target){let best=0,be=1e9;for(let pass=0,lo=0,hi=0.999;pass<3;pass++){const st=(hi-lo)/60;for(let g=lo;g<=hi+1e-9;g+=st){const nk=gulbInv(r,g),N=cx(nk.n,nk.k);let e=0;for(let j=0;j<FIT_ANG.length;j++)e=Math.max(e,Math.abs(fres(N,FIT_ANG[j])-target[j*2]));if(e<be){be=e;best=g}}lo=Math.max(0,best-st);hi=Math.min(0.999,best+st)}return{g:best,err:be}}
+const cache={};
+function analyse(m){if(cache[m.id])return cache[m.id];const N=Nof(m),curves=angleCurves(N),F=F0spec(N),X=xyz(F);
+ const ac=curves[0].ac,sr=curves[0].sr,idx=[630,532,465];
+ const nS=idx.map(w=>interp(m.n,w)),kS=idx.map(w=>interp(m.k,w));
+ const fit=[0,1,2].map(c=>fitG(ac[c],curves.map(o=>o.ac[c])));
+ const g=fit.map(f=>f.g),t=g.map((gg,c)=>(gg-ac[c])/(1-ac[c])),nk=g.map((gg,c)=>gulbInv(ac[c],gg));
+ const cb=Math.cos(82*Math.PI/180),f82=[0,1,2].map(c=>{const sch=ac[c]+(1-ac[c])*(1-cb)**5;return Math.min(curves[82].ac[c]/sch,1)});
+ return cache[m.id]={N,curves,F,lab:lab(X),ac,sr,nS,kS,g,t,nk,f82,fitErr:Math.max(...fit.map(f=>f.err))}}
+/* display */
+const enc=v=>{v=Math.max(0,v);const c=v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055;return Math.round(Math.min(1,c)*255)};
+const css=rgb=>`rgb(${rgb.map(enc).join(',')})`;
+const f3=v=>v.map(x=>x.toFixed(3)).join(', ');
+function env(rx,ry,rz){if(ry>0.55&&rz>-0.2&&Math.abs(rx+0.25)<0.42)return 2.4;if(ry>0.02)return 0.55+0.35*ry;if(ry>-0.04)return 0.35;return 0.2+0.1*Math.min(1,-ry*3)}
+function tone(c){return c<0.85?c:0.85+0.15*(1-Math.exp(-(c-0.85)/0.15))}
+function drawBall(cv,curves){const dpr=Math.min(2,window.devicePixelRatio||1),W=Math.max(40,Math.round(cv.clientWidth*dpr));cv.width=W;cv.height=W;
+ const ctx=cv.getContext('2d'),img=ctx.createImageData(W,W),d=img.data,R=W*0.46,cxp=W/2,cyp=W*0.47;
+ for(let py=0;py<W;py++)for(let px=0;px<W;px++){const x=(px-cxp)/R,y=-(py-cyp)/R,q=x*x+y*y,o=(py*W+px)*4;
+  if(q>1){const sy=(py-(cyp+R*0.98))/(R*0.12),sx=(px-cxp)/(R*0.85),sq=sx*sx+sy*sy;if(sq<1){d[o]=d[o+1]=d[o+2]=0;d[o+3]=Math.round(70*(1-sq))}continue}
+  const z=Math.sqrt(1-q),th=Math.acos(z),i=Math.min(90,Math.round(th*180/Math.PI)),e=env(2*z*x,2*z*y,2*z*z-1),s=curves[i].sr;
+  const edge=q>0.985?(1-q)/0.015:1;d[o]=enc(tone(s[0]*e));d[o+1]=enc(tone(s[1]*e));d[o+2]=enc(tone(s[2]*e));d[o+3]=Math.round(255*Math.min(1,edge*1.2))}
+ ctx.putImageData(img,0,0)}
+let toastT;function copy(txt){(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>{$('toast').textContent='Copied '+txt;$('toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('on'),1400)}).catch(()=>{$('toast').textContent='Copy blocked here: select the numbers instead';$('toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('on'),2000)})}
+document.addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(b)copy(b.dataset.c)});
+/* charts */
+function lineChart(svg,{xs,series,xLab,yMin=0,yMax=1,xTicks,yTicks,strip}){const W=svg.clientWidth,H=svg.clientHeight;if(!W||!H)return;const ml=40,mr=14,mt=12,mb=strip?52:36;
+ const X=v=>ml+(v-xs[0])/(xs[xs.length-1]-xs[0])*(W-ml-mr),Y=v=>mt+(1-(v-yMin)/(yMax-yMin))*(H-mt-mb);let h='';
+ const yt=W<520?yTicks.filter((_,i)=>i%2===0):yTicks,xt=W<520?xTicks.filter((_,i)=>i%2===0):xTicks;
+ yt.forEach(v=>{h+=`<line x1="${ml}" x2="${W-mr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${ml-6}" y="${Y(v)+4}" text-anchor="end">${v.toFixed(1)}</text>`});
+ xt.forEach(v=>{h+=`<text x="${X(v)}" y="${H-mb+18}" text-anchor="middle">${v}</text>`});
+ h+=`<text x="${W-mr}" y="${H-4}" text-anchor="end">${xLab}</text>`;
+ if(strip){for(let w=380;w<780;w+=5){const hue=Math.max(0,Math.min(270,(650-w)*270/250));h+=`<rect x="${X(w)}" y="${H-mb+26}" width="${X(w+5)-X(w)+0.5}" height="6" fill="hsl(${hue} 85% 52%)"/>`}}
+ series.forEach(s=>{h+=`<polyline fill="none" stroke="${s.c}" stroke-width="${s.w||2.5}" ${s.dash?'stroke-dasharray="5 4"':''} points="${s.ys.map((y,i)=>X(xs[i]).toFixed(1)+','+Y(y).toFixed(1)).join(' ')}"/>`;if(s.lab){const yy=s.ys[s.ys.length-1];h+=`<text x="${X(xs[xs.length-1])-4}" y="${Y(yy)-7}" text-anchor="end" style="fill:${s.c}">${s.lab}</text>`}});
+ svg.innerHTML=h}
+const CH=['#d6293e','#2a9a48','#2f6fd6'];
+let cur;
+function drawCurves(){if(!cur)return;const a=analyse(cur),xs=ANG.map((_,i)=>i);
+ const lo=Math.min(...a.curves.flatMap(o=>o.ac))-0.05;
+ lineChart($('svgA'),{xs,series:[0,1,2].map(c=>({c:CH[c],ys:a.curves.map(o=>o.ac[c])})),xLab:'viewing angle, degrees from straight on',yMin:Math.max(0,Math.floor(lo*10)/10),yMax:1,xTicks:[0,15,30,45,60,75,90],yTicks:[0,0.2,0.4,0.6,0.8,1].filter(v=>v>=Math.max(0,Math.floor(lo*10)/10))});
+ lineChart($('svgB'),{xs:WL,series:[{c:'var(--blue)',ys:a.F,w:3}],xLab:'wavelength, nm',yMin:0,yMax:1,xTicks:[400,450,500,550,600,650,700,750],yTicks:[0,0.2,0.4,0.6,0.8,1],strip:true})}
+/* section 1 */
+function showMetal(id){cur=byId[id];const a=analyse(cur);
+ $('src').innerHTML='';const s=document.createElement('span');s.textContent=`Data: ${cur.source}. ${cur.note}`;$('src').appendChild(s);
+ const row=(name,plain,vals,dec=3)=>{const t=vals.map(v=>v.toFixed(dec)).join(', ');return`<tr><td><b>${name}</b><br><span class="note">${plain}</span></td><td class="num">${t}</td><td><button data-c="${t}">Copy</button></td></tr>`};
+ $('vals').innerHTML=`<thead><tr><th>Value</th><th>R, G, B</th><th></th></tr></thead><tbody>`+
+  row('Reflectivity (ACEScg)','Facing colour. Main input.',a.ac)+
+  row('Edge tint (ACEScg)','Pairs with reflectivity.',a.g)+
+  row('t (edge whitening)','Share of the gap to white.',a.t)+
+  row('1 − t','The complement, for multiply + add.',a.t.map(v=>1-v))+
+  row('n, fitted','For n,k inputs. Matches every angle.',a.nk.map(o=>o.n))+
+  row('k, fitted','',a.nk.map(o=>o.k))+
+  row('Reflectivity (linear sRGB)','For sRGB / Rec. 709 pipelines.',a.sr)+
+  row('F82 tint','For OpenPBR specular colour.',a.f82)+
+  row('n, measured','Raw data at 630 / 532 / 465 nm.',a.nS)+
+  row('k, measured','',a.kS)+`</tbody>`;
+ $('swF').style.background=css(a.sr);$('swE').style.background=css(a.curves[80].sr);
+ drawBall($('ball'),a.curves);drawCurves();try{localStorage.setItem('aob-metal',id)}catch(e){}}
+const groups=[['Alloys','alloy'],['Pure metals','pure']];
+$('pick').innerHTML=groups.map(([lab,k])=>`<optgroup label="${lab}">`+D.metals.filter(m=>m.kind===k).map(m=>`<option value="${m.id}">${m.name}</option>`).join('')+`</optgroup>`).join('');
+/* mixing */
+function mixMethods(comp){const ids=Object.keys(comp),fr=ids.map(i=>comp[i]),tot=fr.reduce((a,b)=>a+b,0)||1,f=fr.map(v=>v/tot),Ns=ids.map(i=>Nof(byId[i]));
+ const main=Ns[f.indexOf(Math.max(...f))];
+ const lin=WL.map((_,w)=>Ns.reduce((acc,N,j)=>cadd(acc,cmul(cx(f[j]),N[w])),cx(0)));
+ const eps=WL.map((_,w)=>csqrt(Ns.reduce((acc,N,j)=>cadd(acc,cmul(cx(f[j]),cmul(N[w],N[w]))),cx(0))));
+ const brug=WL.map((_,w)=>{const E=Ns.map(N=>cmul(N[w],N[w]));let e=E.reduce((acc,ei,j)=>cadd(acc,cmul(cx(f[j]),ei)),cx(0));
+  for(let it=0;it<60;it++){let g=cx(0),dg=cx(0);E.forEach((ei,j)=>{const den=cadd(ei,cmul(cx(2),e));g=cadd(g,cmul(cx(f[j]),cdiv(csub(ei,e),den)));dg=cadd(dg,cmul(cx(f[j]),cdiv(cmul(cx(-3),ei),cmul(den,den))))});e=csub(e,cdiv(g,dg))}return csqrt(e)});
+ const Fl=WL.map((_,w)=>Ns.reduce((acc,N,j)=>acc+f[j]*f0(N[w].re,N[w].im),0));
+ return[['Main metal only',main],['Average n and k',lin],['Average permittivity',eps],['Grain mixture',brug],['Average reflectivity',null,Fl]]}
+let mixComp={};
+function showMix(){const m=byId[$('mixPick').value],a=analyse(m);
+ const rows=mixMethods(mixComp).map(([name,N,F])=>{const spec=F||F0spec(N),de=de2000(a.lab,lab(xyz(spec)));const curves=N?angleCurves(N):ANG.map(()=>({sr:toSrgb(xyz(spec))}));return{name,de,curves}});
+ const max=Math.max(15,...rows.map(r=>r.de));
+ $('methods').innerHTML=`<div class="mrow"><canvas id="mc_ref"></canvas><div><b>Measured ${m.name.split(' (')[0].toLowerCase()}</b><div class="note">The real thing</div></div><div class="de">0</div></div>`+
+  rows.map((r,i)=>`<div class="mrow"><canvas id="mc${i}"></canvas><div><b>${r.name}</b><div class="bar"><i style="width:${(r.de/max*100).toFixed(1)}%;background:${r.de>5?'var(--red)':'var(--blue)'}"></i></div></div><div class="de">${r.de.toFixed(1)}</div></div>`).join('');
+ drawBall($('mc_ref'),a.curves);rows.forEach((r,i)=>drawBall($('mc'+i),r.curves))}
+function setMix(){const m=byId[$('mixPick').value];mixComp={...m.comp};
+ $('comp').innerHTML=Object.keys(mixComp).map(i=>`<div><label for="cp_${i}" style="margin:0">${byId[i].name}</label><input type="number" id="cp_${i}" data-i="${i}" min="0" max="100" step="1" value="${Math.round(mixComp[i]*100)}"> %</div>`).join('')+`<div><button id="cpReset">Reset</button></div>`;
+ showMix()}
+$('mixPick').innerHTML=D.metals.filter(m=>m.comp).map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+$('comp').addEventListener('input',e=>{const i=e.target.dataset.i;if(!i)return;mixComp[i]=Math.max(0,+e.target.value||0)/100;showMix()});
+$('comp').addEventListener('click',e=>{if(e.target.id==='cpReset')setMix()});
+$('mixPick').addEventListener('change',setMix);
+/* edge generator */
+const PRE={id:'ss_avg',name:'Stainless (average of both types)'};
+function tFor(id){if(id==='ss_avg'){const A=analyse(byId.ss_aus),B=analyse(byId.ss_fer);return{t:A.t.map((v,i)=>(v+B.t[i])/2),lo:B.ac,hi:A.ac,loN:'ferritic',hiN:'austenitic'}}
+ const a=analyse(byId[id]);return{t:a.t,lo:a.ac.map(v=>Math.max(0,v*0.9)),hi:a.ac.map(v=>Math.min(0.999,v*1.1)),loN:'10% darker',hiN:'10% brighter'}}
+let gen;
+function setGen(){gen=tFor($('tPick').value);$('rCtl').innerHTML=`<label for="rS">Artist value: 0 = ${gen.loN}, 1 = ${gen.hiN}</label><input type="range" id="rS" min="0" max="1" step="0.01" value="1">`;$('rS').addEventListener('input',showGen);showGen()}
+function showGen(){const v=+$('rS').value,r=gen.lo.map((lo,i)=>lo+(gen.hi[i]-lo)*v),t=gen.t,edge=r.map((x,i)=>x*(1-t[i])+t[i]),nk=r.map((x,i)=>gulbInv(x,edge[i]));
+ const line=(n,vals,note='')=>{const s=f3(vals);return`<span><b>${n}</b>${note?`<br><span class="note">${note}</span>`:''}</span><span class="v">${s}</span><button data-c="${s}">Copy</button>`};
+ $('genOut').innerHTML=line('Reflectivity r',r,'What the artist feeds in')+line('t',t,'Hardcoded')+line('1 − t',t.map(x=>1-x))+line('Edge tint',edge,'r × (1 − t) + t')+line('n out',nk.map(o=>o.n),'What the node builds')+line('k out',nk.map(o=>o.k));
+ const curves=ANG.map(th=>({sr:acesToSrgb(nk.map(o=>fres(cx(o.n,o.k),th)))}));
+ drawBall($('ball2'),curves)}
+const AtoS=(()=>{const inv3=m=>{const[a,b,c]=m[0],[d,e,f]=m[1],[g,h,i]=m[2],A=e*i-f*h,B=-(d*i-f*g),C=d*h-e*g,det=a*A+b*B+c*C;return[[A,-(b*i-c*h),b*f-c*e],[B,a*i-c*g,-(a*f-c*d)],[C,-(a*h-b*g),a*e-b*d]].map(r=>r.map(x=>x/det))};const Ai=inv3(D.M_acescg);return D.M_srgb.map(r=>[0,1,2].map(j=>r[0]*Ai[0][j]+r[1]*Ai[1][j]+r[2]*Ai[2][j]))})();
+function acesToSrgb(v){return mv(AtoS,v)}
+$('tPick').innerHTML=`<option value="ss_avg">${PRE.name}</option>`+D.metals.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+$('tPick').addEventListener('change',setGen);
+/* boot */
+$('pick').addEventListener('change',e=>showMetal(e.target.value));
+let start='ss_aus';try{const s=localStorage.getItem('aob-metal');if(s&&byId[s])start=s}catch(e){}
+$('pick').value=start;$('mixPick').value='brass70';
+showMetal(start);setMix();setGen();
+const roA=new ResizeObserver(()=>{drawCurves()});roA.observe($('figA'));roA.observe($('figB'));
+let rsT;const roB=new ResizeObserver(()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(cur){drawBall($('ball'),analyse(cur).curves);showGen()}},120)});roB.observe($('ball'));
+}
+</script>
+</body></html>
